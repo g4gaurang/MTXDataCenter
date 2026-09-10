@@ -1,4 +1,5 @@
-import { FormEvent, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
 import {
   Activity,
   ArrowRight,
@@ -8,7 +9,6 @@ import {
   Check,
   ChevronRight,
   CircuitBoard,
-  Clock3,
   Cpu,
   Database,
   Gauge,
@@ -20,8 +20,8 @@ import {
   Snowflake,
   Sparkles,
   X,
-  Zap,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import {
   Area,
   AreaChart,
@@ -83,12 +83,25 @@ function Selector({
   active,
   setActive,
   label,
+  id,
 }: {
   items: string[]
   active: number
   setActive: (index: number) => void
   label: string
+  id: string
 }) {
+  const handleKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let next: number
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % items.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + items.length) % items.length
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = items.length - 1
+    else return
+    event.preventDefault()
+    setActive(next)
+    document.getElementById(`${id}-tab-${next}`)?.focus()
+  }
   return (
     <div className="selector" role="tablist" aria-label={label}>
       {items.map((item, index) => (
@@ -96,8 +109,12 @@ function Selector({
           key={item}
           role="tab"
           aria-selected={active === index}
+          aria-controls={`${id}-panel`}
+          id={`${id}-tab-${index}`}
+          tabIndex={active === index ? 0 : -1}
           className={active === index ? 'active' : ''}
           onClick={() => setActive(index)}
+          onKeyDown={(event) => handleKey(event, index)}
         >
           {item}
         </button>
@@ -109,7 +126,7 @@ function Selector({
 function Header() {
   const [open, setOpen] = useState(false)
   return (
-    <header className="site-header">
+    <header className="site-header" id="top">
       <a className="brand" href="#top" aria-label="MTX Data Center Solutions home">
         <span className="brand-mark"><Server size={20} /></span>
         <span><strong>MTX</strong> Data Center Solutions</span>
@@ -144,7 +161,6 @@ function HeroVisual() {
 function Hero() {
   return (
     <>
-      <main id="top">
         <section className="hero" id="overview">
           <div className="hero-copy">
             <span className="eyebrow">Enterprise and AI Infrastructure</span>
@@ -165,7 +181,6 @@ function Hero() {
             <div key={label}><strong>{value}</strong><span>{label}</span></div>
           ))}
         </section>
-      </main>
     </>
   )
 }
@@ -174,19 +189,19 @@ function Challenges() {
   const [active, setActive] = useState(0)
   const item = challenges[active]
   return (
-    <section className="section" aria-labelledby="challenge-title">
+    <section className="section" aria-label="Buyer challenges">
       <SectionHeading eyebrow="Buyer priorities" title="Turn infrastructure constraints into planning decisions" body="Select a challenge to see a potential product response and measures that can guide the conversation." />
       <div className="challenge-layout">
-        <div className="challenge-grid" role="tablist" aria-label="Buyer challenges">
+        <div className="challenge-grid" role="group" aria-label="Buyer challenges">
           {challenges.map((challenge, index) => (
-            <button role="tab" aria-selected={active === index} className={`challenge-card ${active === index ? 'active' : ''}`} key={challenge.title} onClick={() => setActive(index)}>
+            <button aria-pressed={active === index} className={`challenge-card ${active === index ? 'active' : ''}`} key={challenge.title} onClick={() => setActive(index)}>
               <span>0{index + 1}</span><strong>{challenge.title}</strong><ChevronRight />
             </button>
           ))}
         </div>
-        <div className="response-panel" role="tabpanel">
+        <div className="response-panel" aria-live="polite">
           <span className="panel-kicker">Selected challenge</span>
-          <h3 id="challenge-title">{item.title}</h3>
+          <h3>{item.title}</h3>
           <h4>Challenge</h4><p>{item.challenge}</p>
           <h4>MTX response</h4><p>{item.response}</p>
           <h4>Suggested measures</h4>
@@ -205,18 +220,18 @@ function Models() {
   return (
     <section className="section tinted" id="models">
       <SectionHeading eyebrow="Infrastructure models" title="Select the operating and control model that fits the workload" body="Each model reflects a different balance of hardware control, facility dependency, density, and operating responsibility." />
-      <Selector items={models.map((m) => m.name)} active={active} setActive={setActive} label="Infrastructure models" />
-      <div className="model-detail">
+      <Selector id="models" items={models.map((m) => m.name)} active={active} setActive={setActive} label="Infrastructure models" />
+      <div className="model-detail" id="models-panel" role="tabpanel" aria-labelledby={`models-tab-${active}`}>
         <div>
-          <span className={`status ${active === 2 ? 'planned' : 'configured'}`}>{model.status}</span>
+          <span className={`status ${model.status === 'Planned or developing' ? 'planned' : model.status.includes('validation') ? 'validation' : 'configured'}`}>{model.status}</span>
           <h3>{model.name}</h3><p>{model.description}</p>
           {active === 2 && <div className="notice"><Sparkles /> AI-ready capabilities are subject to facility availability, capacity, design validation, and deployment schedule.</div>}
         </div>
         <ul className="check-list">{model.traits.map((trait) => <li key={trait}><Check />{trait}</li>)}</ul>
       </div>
-      <button className="compare-toggle" aria-expanded={compare} onClick={() => setCompare(!compare)}>{compare ? 'Close model comparison' : 'Compare deployment models'} <BarChart3 /></button>
+      <button className="compare-toggle" aria-expanded={compare} aria-controls="model-comparison" onClick={() => setCompare(!compare)}>{compare ? 'Close model comparison' : 'Compare deployment models'} <BarChart3 /></button>
       {compare && (
-        <div className="table-scroll">
+        <div className="table-scroll" id="model-comparison">
           <table className="comparison-table">
             <caption>Illustrative infrastructure model comparison</caption>
             <thead><tr><th>Decision area</th>{models.map((m) => <th key={m.name}>{m.name}</th>)}</tr></thead>
@@ -242,8 +257,8 @@ function Workloads() {
   return (
     <section className="section dark" id="workloads">
       <SectionHeading light eyebrow="Workload explorer" title="Start with workload behavior, not a hardware assumption" body="AI workloads vary. Select a category to review the infrastructure questions that shape a viable deployment." />
-      <Selector items={workloads.map((w) => w.name)} active={active} setActive={setActive} label="Workload categories" />
-      <div className="workload-layout">
+      <Selector id="workloads" items={workloads.map((w) => w.name)} active={active} setActive={setActive} label="Workload categories" />
+      <div className="workload-layout" id="workloads-panel" role="tabpanel" aria-labelledby={`workloads-tab-${active}`}>
         <div className="workload-summary">
           <span className="panel-kicker">Selected workload</span><h3>{workload.name}</h3>
           <h4>Primary infrastructure considerations</h4>
@@ -257,7 +272,7 @@ function Workloads() {
   )
 }
 
-const assessmentQuestions = [
+const assessmentQuestions: [string, string[]][] = [
   ['What type of workload are you planning?', ['Enterprise', 'SaaS / data', 'AI / HPC']],
   ['How predictable is demand?', ['Predictable', 'Variable', 'Unclear']],
   ['Do you need dedicated hardware?', ['Yes', 'No', 'Undecided']],
@@ -272,8 +287,9 @@ function Assessment() {
   const recommendation = useMemo(() => {
     if (!completed) return ''
     if (answers[4] === 'Yes' || answers[0] === 'AI / HPC') return 'AI-readiness assessment recommended'
-    if (answers[2] === 'Yes' || answers[3] === 'High') return 'Dedicated infrastructure starting point'
-    if (answers[3] === 'Low' && answers[2] === 'No') return 'Colocation starting point'
+    if (answers[1] !== 'Predictable' && answers[2] === 'Undecided') return 'Hybrid deployment may warrant evaluation'
+    if (answers[2] === 'Yes' && answers[3] === 'High' && answers[5] === 'Advisory only') return 'Colocation starting point'
+    if (answers[2] === 'Yes' || answers[3] === 'High' || answers[5] === 'Infrastructure') return 'Dedicated infrastructure starting point'
     return 'Hybrid deployment may warrant evaluation'
   }, [answers, completed])
   return (
@@ -307,10 +323,10 @@ function AIReadiness() {
     <section className="section ai-section" id="ai-readiness">
       <SectionHeading eyebrow="AI readiness" title="Prepare the infrastructure before AI demand arrives" body="Readiness connects workload demand to data, compute, facility capacity, security, and operations. Select a dimension to examine the planning work." />
       <div className="readiness-layout">
-        <div className="readiness-map" role="tablist" aria-label="AI readiness dimensions">
-          {readiness.map((dimension, index) => <button role="tab" aria-selected={active === index} className={active === index ? 'active' : ''} onClick={() => setActive(index)} key={dimension[0]}><span>{String(index + 1).padStart(2, '0')}</span>{dimension[0]}</button>)}
+        <div className="readiness-map" role="group" aria-label="AI readiness dimensions">
+          {readiness.map((dimension, index) => <button aria-pressed={active === index} className={active === index ? 'active' : ''} onClick={() => setActive(index)} key={dimension[0]}><span>{String(index + 1).padStart(2, '0')}</span>{dimension[0]}</button>)}
         </div>
-        <div className="readiness-detail" role="tabpanel">
+        <div className="readiness-detail" aria-live="polite">
           <Sparkles /><span className="status planned">Planning dimension</span><h3>{item[0]}</h3>
           {[['Questions to answer', item[1]], ['Common constraints', item[2]], ['Planning considerations', item[3]], ['Potential MTX support', item[4]]].map(([title, value]) => <div key={title}><h4>{title}</h4><p>{value}</p></div>)}
         </div>
@@ -325,10 +341,10 @@ function Architecture() {
     <section className="section architecture-section" id="architecture">
       <SectionHeading light eyebrow="Conceptual architecture" title="Trace the dependencies from workload to operations" body="Select a layer to see its role. This view is conceptual and does not represent a specific MTX facility or deployed design." />
       <div className="architecture-shell">
-        <div className="layer-stack" role="tablist" aria-label="Architecture layers">
-          {architecture.map(([name, items], index) => <button role="tab" aria-selected={active === index} onClick={() => setActive(index)} className={active === index ? 'active' : ''} key={name}><span>{name} layer</span><small>{items.slice(0, 3).join(' · ')}</small></button>)}
+        <div className="layer-stack" role="group" aria-label="Architecture layers">
+          {architecture.map(([name, items], index) => <button aria-pressed={active === index} onClick={() => setActive(index)} className={active === index ? 'active' : ''} key={name}><span>{name} layer</span><small>{items.slice(0, 3).join(' · ')}</small></button>)}
         </div>
-        <div className="layer-detail" role="tabpanel">
+        <div className="layer-detail" aria-live="polite">
           <span className="concept-label">Conceptual view</span><Layers3 /><h3>{architecture[active][0]} layer</h3><p>{architecture[active][2]}</p>
           <div>{architecture[active][1].map((item) => <span key={item}>{item}</span>)}</div>
         </div>
@@ -394,15 +410,15 @@ function Dashboard() {
   return (
     <section className="section dashboard-section" id="operations">
       <SectionHeading light eyebrow="Operations command center" title="Use infrastructure signals to support operating decisions" body="A fictional dashboard demonstrates how teams could review capacity, demand, and operational warning states." />
-      <Selector items={dashboardTabs} active={active} setActive={setActive} label="Operations dashboard views" />
-      <div className="dashboard">
+      <Selector id="dashboard" items={dashboardTabs} active={active} setActive={setActive} label="Operations dashboard views" />
+      <div className="dashboard" id="dashboard-panel" role="tabpanel" aria-labelledby={`dashboard-tab-${active}`}>
         <div className="dashboard-head"><div><span className="live-dot amber">2 items need review</span><h3>{dashboardTabs[active]}</h3></div><span className="data-label">Illustrative product data</span></div>
         <div className="kpi-grid">
           {[['Rack utilization', 'Elevated', 'Capacity review'], ['Compute allocation', 'Moderate', 'Within planning band'], ['Storage consumption', 'Elevated', 'Forecast rising'], ['Network demand', 'Moderate', 'Variable profile'], ['Power-capacity band', 'Elevated', 'Engineering review'], ['Cooling-capacity band', 'Moderate', 'Monitor density'], ['Open operational events', '2', 'One warning'], ['AI workload demand', 'High', 'Planning signal']].map(([label, value, note], index) => <article className={index === 0 || index === 4 ? 'warning' : ''} key={label}><span>{label}</span><strong>{value}</strong><small>{note}</small></article>)}
         </div>
         <div className="chart-card">
           <div><h4>Capacity forecast</h4><p>Relative demand index by planning period</p></div>
-          <div className="chart-wrap" aria-label={`Illustrative ${dashboardTabs[active]} trend: ${data.map((d) => `${d.period} ${d.value}`).join(', ')}`}>
+          <div className="chart-wrap" role="img" aria-label={`Illustrative ${dashboardTabs[active]} trend: ${data.map((d) => `${d.period} ${d.value}`).join(', ')}`}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#32c6c2" stopOpacity=".5" /><stop offset="100%" stopColor="#32c6c2" stopOpacity="0" /></linearGradient></defs><CartesianGrid strokeDasharray="4 6" stroke="#29425e" /><XAxis dataKey="period" stroke="#9bb0c7" /><YAxis hide domain={[0, 100]} /><Tooltip /><Area type="monotone" dataKey="value" stroke="#56ded7" strokeWidth={3} fill="url(#area)" /></AreaChart>
             </ResponsiveContainer>
@@ -421,8 +437,8 @@ function Security() {
       <SectionHeading eyebrow="Security and operational resilience" title="Coordinate controls across the infrastructure lifecycle" body="Specific controls, monitoring, and service responsibilities depend on the selected model, facility, risk profile, and agreement." />
       <div className="security-layout">
         <div className="control-orbit" aria-hidden="true"><ShieldCheck /><span>Layered<br />controls</span></div>
-        <div className="control-list" role="tablist" aria-label="Control layers">{controls.map(([name], index) => <button role="tab" aria-selected={active === index} onClick={() => setActive(index)} className={active === index ? 'active' : ''} key={name}>{name}<ChevronRight /></button>)}</div>
-        <div className="control-detail" role="tabpanel"><span className="panel-kicker">Potential controls</span><h3>{controls[active][0]}</h3><ul className="check-list">{controls[active][1].map((item) => <li key={item}><Check />{item}</li>)}</ul><p className="muted">Availability and responsibility require validation for each engagement.</p></div>
+        <div className="control-list" role="group" aria-label="Control layers">{controls.map(([name], index) => <button aria-pressed={active === index} onClick={() => setActive(index)} className={active === index ? 'active' : ''} key={name}>{name}<ChevronRight /></button>)}</div>
+        <div className="control-detail" aria-live="polite"><span className="panel-kicker">Potential controls</span><h3>{controls[active][0]}</h3><ul className="check-list">{controls[active][1].map((item) => <li key={item}><Check />{item}</li>)}</ul><p className="muted">Availability and responsibility require validation for each engagement.</p></div>
       </div>
     </section>
   )
@@ -433,8 +449,8 @@ function Journey() {
   return (
     <section className="section tinted" id="adoption">
       <SectionHeading eyebrow="Deployment journey" title="Move from workload discovery to managed evolution" body="Select a phase to review expected activities and the decision it supports. Timing depends on scope, procurement, facility, and migration needs." />
-      <div className="journey-rail" role="tablist" aria-label="Deployment phases">{journey.map(([name], index) => <button role="tab" aria-selected={active === index} onClick={() => setActive(index)} className={active === index ? 'active' : ''} key={name}><span>{index + 1}</span>{name}</button>)}</div>
-      <div className="journey-detail" role="tabpanel"><div><span className="panel-kicker">Phase {active + 1}</span><h3>{journey[active][0]}</h3><p>{journey[active][2]}</p></div><ul className="check-list">{journey[active][1].map((item) => <li key={item}><Check />{item}</li>)}</ul></div>
+      <div className="journey-rail" role="group" aria-label="Deployment phases">{journey.map(([name], index) => <button aria-pressed={active === index} onClick={() => setActive(index)} className={active === index ? 'active' : ''} key={name}><span>{index + 1}</span>{name}</button>)}</div>
+      <div className="journey-detail" aria-live="polite"><div><span className="panel-kicker">Phase {active + 1}</span><h3>{journey[active][0]}</h3><p>{journey[active][2]}</p></div><ul className="check-list">{journey[active][1].map((item) => <li key={item}><Check />{item}</li>)}</ul></div>
     </section>
   )
 }
@@ -445,7 +461,7 @@ function Responsibility() {
   return (
     <section className="section">
       <SectionHeading eyebrow="Responsibility model" title="Make operating ownership explicit" body="The final responsibility model depends on the selected service and contract." />
-      <div className="focus-controls" aria-label="Highlight responsibility party">{cols.slice(1).map((col) => <button className={focus === col ? 'active' : ''} onClick={() => setFocus(col)} key={col}>{col}</button>)}</div>
+      <div className="focus-controls" aria-label="Highlight responsibility party">{cols.slice(1).map((col) => <button aria-pressed={focus === col} className={focus === col ? 'active' : ''} onClick={() => setFocus(col)} key={col}>{col}</button>)}</div>
       <div className="table-scroll"><table className="responsibility-table"><caption>Illustrative division of infrastructure responsibilities</caption><thead><tr>{cols.map((col) => <th className={focus === col ? 'focused' : ''} key={col}>{col}</th>)}</tr></thead><tbody>{responsibilities.map((row) => <tr key={row[0]}>{row.map((cell, index) => index === 0 ? <th key={cell}>{cell}</th> : <td className={focus === cols[index] ? 'focused' : ''} key={`${cell}-${index}`}>{cell}</td>)}</tr>)}</tbody></table></div>
     </section>
   )
@@ -474,7 +490,7 @@ function Maturity() {
   return (
     <section className="section maturity">
       <SectionHeading eyebrow="Current availability and roadmap" title="State maturity before discussing capability" body="This prototype defaults claim-sensitive physical AI capabilities to planned or developing because the repository contains no approval evidence." />
-      <div className="maturity-grid">{columns.map(([name, body, items], index) => <article key={name as string} className={`maturity-${index}`}><span className="status">{name}</span><p>{body}</p><ul>{(items as string[]).map((item) => <li key={item}><Check />{item}</li>)}</ul></article>)}</div>
+      <div className="maturity-grid">{columns.map(([name, body, items], index) => <article key={name as string} className={`maturity-${index}`}><span className="status">{name}</span><p>{body}</p><ul>{(items as string[]).map((item) => <li key={item}>{index === 0 ? <X /> : <Check />}{item}</li>)}</ul></article>)}</div>
     </section>
   )
 }
@@ -486,7 +502,7 @@ function Measures() {
       <SectionHeading eyebrow="Recommended measures" title="Infrastructure measures that support operating decisions" body="Select measures during service design based on workload objectives. No benchmark or improvement value is implied." />
       <div className="measures-layout">
         <div>{Object.entries(measures).map(([group, items]) => <article key={group}><h3>{group}</h3><div className="measure-chips">{items.map((item) => <span key={item}>{item}</span>)}</div></article>)}</div>
-        <div className="measure-chart" aria-label="Measure groups and number of candidate measures">
+        <div className="measure-chart" role="img" aria-label={`Candidate measure counts by group: ${data.map((item) => `${item.name} ${item.value}`).join(', ')}`}>
           <ResponsiveContainer width="100%" height="100%"><BarChart data={data} layout="vertical" margin={{ left: 20 }}><CartesianGrid strokeDasharray="3 6" horizontal={false} /><XAxis type="number" hide /><YAxis dataKey="name" type="category" width={105} tick={{ fontSize: 12 }} /><Tooltip /><Bar dataKey="value" radius={[0, 6, 6, 0]}>{data.map((_, index) => <Cell key={index} fill={['#1768e0', '#20aaa8', '#7357d8', '#e29c36', '#506a88'][index]} />)}</Bar></BarChart></ResponsiveContainer>
           <p className="data-label">Category count only — not performance data</p>
         </div>
@@ -496,7 +512,7 @@ function Measures() {
 }
 
 function WhyMTX() {
-  const items = [
+  const items: [string, string, LucideIcon][] = [
     ['A path from current infrastructure to AI readiness', 'MTX helps organizations evaluate current workloads while preparing for higher-density AI and analytics demand.', CircuitBoard],
     ['Flexible deployment models', 'Organizations can evaluate dedicated infrastructure, colocation, and AI-ready patterns based on control, capacity, security, and operating requirements.', Boxes],
     ['Workload-led planning', 'Infrastructure decisions begin with workload behavior, data needs, performance expectations, and growth patterns.', Gauge],
@@ -518,11 +534,11 @@ function Contact() {
   }
   return (
     <section className="contact" id="contact">
-      <div className="contact-copy"><span className="eyebrow">Plan the next decision</span><h2>Build an infrastructure path that supports what comes next</h2><p>Evaluate your current workloads, understand AI infrastructure requirements, and develop a phased deployment plan aligned with your operating model.</p><div className="contact-actions"><span>Schedule an Infrastructure Assessment</span><span>Discuss AI Readiness</span><span>Request a Consultation</span></div></div>
+      <div className="contact-copy"><span className="eyebrow">Plan the next decision</span><h2>Build an infrastructure path that supports what comes next</h2><p>Evaluate your current workloads, understand AI infrastructure requirements, and develop a phased deployment plan aligned with your operating model.</p><div className="contact-actions"><a href="#consultation-form">Schedule an Infrastructure Assessment</a><a href="#consultation-form">Discuss AI Readiness</a><a href="#consultation-form">Request a Consultation</a></div></div>
       {submitted ? (
         <div className="confirmation" role="status"><Check /><h3>Your planning request is ready.</h3><p>This prototype stored and transmitted no information. In a production site, an approved contact workflow would continue the request.</p><button className="button secondary" onClick={() => setSubmitted(false)}>Start another request</button></div>
       ) : (
-        <form onSubmit={submit}>
+        <form id="consultation-form" onSubmit={submit}>
           <div className="form-grid">
             <label>Name<input required name="name" autoComplete="name" /></label>
             <label>Organization<input required name="organization" autoComplete="organization" /></label>
@@ -550,25 +566,27 @@ function Footer() {
 export default function App() {
   return (
     <>
-      <a className="skip-link" href="#overview">Skip to main content</a>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <Header />
-      <Hero />
-      <Challenges />
-      <Models />
-      <Workloads />
-      <Assessment />
-      <AIReadiness />
-      <Architecture />
-      <CapacityPlanner />
-      <Security />
-      <Dashboard />
-      <Journey />
-      <Responsibility />
-      <Offering />
-      <Maturity />
-      <Measures />
-      <WhyMTX />
-      <Contact />
+      <main id="main-content" tabIndex={-1}>
+        <Hero />
+        <Challenges />
+        <Models />
+        <Workloads />
+        <Assessment />
+        <AIReadiness />
+        <Architecture />
+        <CapacityPlanner />
+        <Security />
+        <Dashboard />
+        <Journey />
+        <Responsibility />
+        <Offering />
+        <Maturity />
+        <Measures />
+        <WhyMTX />
+        <Contact />
+      </main>
       <Footer />
       <a className="back-to-top" href="#top" aria-label="Back to top">↑</a>
     </>

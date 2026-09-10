@@ -209,7 +209,7 @@ export const readiness = [
   ['Capacity expansion', 'What triggers the next deployment phase?', 'Long lead items and uncertain demand', 'Set forecasts and decision checkpoints', 'Maintain a phased capacity plan'],
 ]
 
-export const architecture = [
+export const architecture: [string, string[], string][] = [
   ['Workload', ['Enterprise applications', 'SaaS services', 'Analytics', 'AI inference', 'AI training', 'HPC'], 'Defines service behavior, criticality, and demand patterns.'],
   ['Compute', ['CPU compute', 'GPU nodes', 'AI accelerators', 'Virtualized workloads', 'Container platforms'], 'Maps software requirements to processing, memory, and orchestration.'],
   ['Data', ['High-performance storage', 'Object storage', 'Backup', 'Data pipelines', 'Model artifacts'], 'Moves and protects application data, datasets, and models.'],
@@ -218,7 +218,7 @@ export const architecture = [
   ['Operations', ['Monitoring', 'Capacity management', 'Incident management', 'Change management', 'Access governance', 'Reporting'], 'Turns infrastructure signals into controlled operational decisions.'],
 ]
 
-export const journey = [
+export const journey: [string, string[], string][] = [
   ['Discover', ['Workload inventory', 'Business criticality', 'Performance needs', 'Security requirements', 'Current infrastructure', 'Growth expectations', 'AI demand'], 'Agree which workloads and outcomes enter assessment.'],
   ['Assess', ['Deployment-model evaluation', 'Capacity analysis', 'Connectivity review', 'Power and cooling considerations', 'Operating-responsibility model', 'Risk review'], 'Identify constraints, assumptions, and viable models.'],
   ['Design', ['Target architecture', 'Facility requirements', 'Migration waves', 'Security controls', 'Monitoring model', 'Recovery approach', 'Acceptance criteria'], 'Document the configuration and decisions to validate.'],
@@ -226,7 +226,7 @@ export const journey = [
   ['Operate and evolve', ['Monitoring', 'Incident support', 'Capacity reviews', 'Platform maintenance', 'Reporting', 'Workload optimization', 'AI-ready expansion'], 'Use operational evidence to guide maintenance and expansion.'],
 ]
 
-export const controls = [
+export const controls: [string, string[]][] = [
   ['Physical security', ['Controlled facility access', 'Visitor management', 'Equipment-area restrictions', 'Monitoring', 'Access records']],
   ['Infrastructure security', ['Network segmentation', 'Administrative access controls', 'Secure configuration', 'Patch coordination', 'Vulnerability management']],
   ['Data protection', ['Encryption options', 'Backup', 'Retention', 'Recovery planning', 'Data-handling controls']],

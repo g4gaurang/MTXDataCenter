@@ -16,6 +16,8 @@ The application is static. It does not require a backend, database, account, API
 
 ## Local setup
 
+Use Node.js 22 and npm 10 or later.
+
 ```bash
 npm install
 npm run dev
